@@ -15,16 +15,159 @@ datasource db {
 }
 //DATABASE_URL="mysql://johndoe:randompassword@localhost:3306/mydb"
 
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  username  String   @unique
-  password String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// model User {
+//   id      Int      @id @default(autoincrement())
+//   email   String   @unique
+//   username  String   @unique
+//   password String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
 
 model Test {
   id      Int      @id @default(autoincrement())
   name   String   @unique
 }
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
+}
+
+enum Role {
+  member
+  admin
+  co_admin
+}
+
+enum Seasons {
+  spring
+  summer
+  autumn
+  winter
+}
+ 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  username      String?   @unique
+  password      String?
+  phoneNumber   String? @unique
+  role          Role      @default(member) // was isAdmin
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  orders        Orders[]
+
+  @@map("users")
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+enum OrderStatus {
+  processing
+  completed 
+  trash
+}
+
+model Season {
+  season_id Int     @id @default(autoincrement())
+  name      Seasons
+  products  Product[]
+}
+
+model Category {
+  category_id Int     @id @default(autoincrement())
+  name        String
+  description String
+  products    Product[]
+}
+
+model Product {
+  product_id      Int              @id @default(autoincrement())
+  name            String
+  image_url       String
+  createdAt       DateTime         @default(now())
+
+  category_id     Int
+  season_id       Int
+
+  // Relations
+  category        Category         @relation(fields: [category_id], references: [category_id])
+  season          Season           @relation(fields: [season_id], references: [season_id])
+  productVariants ProductVariant[]
+}
+
+model ProductVariant {
+  variant_id      Int              @id @default(autoincrement())
+  product_id      Int
+  size            String
+  color           String
+  stock_quantity  Int
+  sku             String           @unique
+
+  // Relations
+  product         Product          @relation(fields: [product_id], references: [product_id])
+  orderItems      OrderItem[]
+}
+
+model Orders {
+  order_id    Int              @id @default(autoincrement())
+  user_id     String
+  total       Decimal          @db.Decimal(10, 2)
+  status      OrderStatus      @default(processing)
+  createdAt   DateTime         @default(now())
+
+  user        User             @relation(fields: [user_id], references: [id])
+  orderItems  OrderItem[]
+}
+
+model OrderItem {
+  order_item_id    Int              @id @default(autoincrement())
+  order_id         Int
+  variant_id       Int
+  quantity         Int
+  price            Decimal          @db.Decimal(10, 2)
+
+  // Relations
+  order            Orders           @relation(fields: [order_id], references: [order_id])
+  variant          ProductVariant   @relation(fields: [variant_id], references: [variant_id])
+}
+
+

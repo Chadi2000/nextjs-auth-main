@@ -16,11 +16,13 @@ import { Button } from '../ui/button';
 import Link from 'next/link';
 import GoogleSignInButton from '../GoogleSignInButton';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const FormSchema = z
   .object({
     username: z.string().min(1, 'Username is required').max(100),
     email: z.string().min(1, 'Email is required').email('Invalid email'),
+    phoneNumber: z.string().length(8, 'Phone Number is requeried and should be like 71622881'),
     password: z
       .string()
       .min(1, 'Password is required')
@@ -34,6 +36,7 @@ const FormSchema = z
 
 const SignUpForm = () => {
   const router = useRouter();
+  const { toast } = useToast()
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -41,6 +44,8 @@ const SignUpForm = () => {
       email: '',
       password: '',
       confirmPassword: '',
+      phoneNumber:''
+
     },
   });
 
@@ -53,14 +58,20 @@ const SignUpForm = () => {
       body: JSON.stringify({
         username: values.username,
         email: values.email,
-        password: values.password
+        password: values.password,
+        phoneNumber: values.phoneNumber
       })
     })
 
     if(response.ok){
-      router.push('/sign-in')
+      console.log(response)
+      // router.push('/sign-in')
     }else{
-      console.error('Registartion failed')
+      toast({
+        title: "Error",
+        description: "Oops! Something Went Wrong!",
+        variant:"destructive"
+      })
     }
   };
 
@@ -89,6 +100,19 @@ const SignUpForm = () => {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input placeholder='mail@example.com' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='phoneNumber'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder='71123456' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

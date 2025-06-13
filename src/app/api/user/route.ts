@@ -8,6 +8,7 @@ const userSchema = z
   .object({
     username: z.string().min(1, 'Username is required').max(100),
     email: z.string().min(1, 'Email is required').email('Invalid email'),
+    phoneNumber: z.string().length(8, 'phone number is requeired'),
     password: z
       .string()
       .min(1, 'Password is required')
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { email, username, password } = userSchema.parse(body);
+    const { email, username, password, phoneNumber } = userSchema.parse(body);
 
     const existingUserByEmail = await db.user.findUnique({
       where: { email },
@@ -45,11 +46,16 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 10);
 
+    console.log(phoneNumber)
+
+
+
     const newUser = await db.user.create({
       data: {
         username,
         email,
         password: hashedPassword,
+        phoneNumber: phoneNumber
       },
     });
 
