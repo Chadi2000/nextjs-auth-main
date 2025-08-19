@@ -3,6 +3,7 @@ import { hash } from "bcrypt";
 import { db } from "@/lib/db";
 import * as z from 'zod'
 
+
 //define schema for input validation
 const userSchema = z
   .object({
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
 
     const newUser = await db.user.create({
       data: {
-        username,
+        name: username,
         email,
         password: hashedPassword,
         phoneNumber: phoneNumber
@@ -73,3 +74,7 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+
+
