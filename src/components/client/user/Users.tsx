@@ -1,14 +1,14 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import Input from "../utils/Input"
+import Input from "../../utils/Input"
 import { CiSearch } from "react-icons/ci";
 import { FaEdit, FaEye, FaFilter, FaTimes, FaTrash } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import PopUp from '../utils/PopUp';
+import PopUp from '../../utils/PopUp';
 import { toast } from 'react-toastify';
-import Loader from '../utils/Loader';
-import Drawer from '../utils/Drawwer';
-import LabledInput from '../utils/LabeledInput';
+import Loader from '../../utils/Loader';
+import Drawer from '../../utils/Drawwer';
+import LabledInput from '../../utils/LabeledInput';
 
 
 

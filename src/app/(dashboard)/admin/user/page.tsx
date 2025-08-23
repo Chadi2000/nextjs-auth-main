@@ -1,4 +1,4 @@
-import ClientUserComponent from '@/components/client/Users';
+import ClientUserComponent from '@/components/client/user/Users';
 import { toast } from '@/hooks/use-toast';
 import { db } from '@/lib/db';
 import React from 'react'

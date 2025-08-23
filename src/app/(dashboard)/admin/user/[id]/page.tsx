@@ -1,4 +1,4 @@
-import ClientUserDetailsComponent from '@/components/client/UserDetails'
+import ClientUserDetailsComponent from '@/components/client/user/UserDetails'
 import { db } from '@/lib/db'
 import React from 'react'
 
