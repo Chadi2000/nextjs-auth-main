@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 import Loader from '../../utils/Loader';
 import Drawer from '../../utils/Drawwer';
 import LabledInput from '../../utils/LabeledInput';
+import ShowingTotal from '@/components/utils/ShowingTotal';
+import Pagination from '@/components/utils/Pagination';
 
 interface Category {
   category_id: number;
@@ -14,106 +16,275 @@ interface Category {
   description: string;
 }
 
-export default function CategoriesComponent({ categories }: { categories: Category[] }) {
+interface CategoriesInfo {
+  categories: Category[];
+  totalCategories: number;
+  totalPages: number;
+}
 
+export default function CategoriesComponent(CategoriesInfoOrgin: CategoriesInfo) {
+
+  const [categoriesInfo, setCategoriesInfo] = useState({
+    totalPages: CategoriesInfoOrgin.totalPages,
+    totalCategories: CategoriesInfoOrgin.totalCategories
+  })
   const [deleteInfo, setDeleteInfo] = useState({
-    showDeletePopUp:false,
+    showDeletePopUp: false,
     selectedId: '',
-  }) 
+  })
   const [isDeleteLoading, setIsDeleteLoading] = useState(false)
   const [isOpenDrawer, setIsOpenDrawer] = useState(false);
-  const [categoriesData, setCategoriesData] = useState(categories);
+  const [categoriesData, setCategoriesData] = useState(CategoriesInfoOrgin.categories);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectAll, setSelectAll] = useState(false)
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openAddCategoryPopUp, setOpenAddCategoryPopUp] = useState(false)
-  const [filtersData, setFilterData] = useState({
-    email:'',
-    phoneNumber: ""
+  const [openDeleteCategoryPopUp, SetOpenDeleteCategoryPopUp] = useState(false)
+  const [categoryReq, setCategoryReq] = useState({
+    category_id: "",
+    name: "",
+    description: ""
   })
-  const [categoryReq, setCategoryReq ] = useState({
-    id:"",
-    name:"",
-    description:""
+  const [filterCategory, setFilterCategory] = useState({
+    name: "",
+    description: "",
+    limit: 10,
+    page: 1
   })
   const router = useRouter();
-
-  const closeAddCategoryPopup = () =>{
+  const closeAddCategoryPopup = () => {
     setCategoryReq({
-        id:"",
-        name:"",
-        description:""
+      category_id: "",
+      name: "",
+      description: ""
     })
     setOpenAddCategoryPopUp(false)
-  } 
-
-  const cancelDelete = () =>{
-   setDeleteInfo({
-    showDeletePopUp:false,
-    selectedId:''
-   })
   }
 
-  const handleSelectAll = () =>{
-    if(selectAll){
-        setSelectedIds([])
-    }else{
-         setSelectedIds(categoriesData.map((c) => c.category_id));
+  const cancelDelete = () => {
+    setDeleteInfo({
+      showDeletePopUp: false,
+      selectedId: ''
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(categoriesData.map((c) => c.category_id));
     }
     setSelectAll(!selectAll)
   }
 
-    function handleSelectCategory(categoryId: number) {
+  function handleSelectCategory(categoryId: number) {
     if (selectedIds.includes(categoryId)) {
-        setSelectedIds((prev) => prev.filter((id) => id !== categoryId));
+      setSelectedIds((prev) => prev.filter((id) => id !== categoryId));
     } else {
-        setSelectedIds((prev) => [...prev, categoryId]);
+      setSelectedIds((prev) => [...prev, categoryId]);
     }
-    }
+  }
 
-    async function AddCategory() {
+  async function openEditPopUp (categoryId : number) {
+    let response = await fetch(`/api/category/${categoryId}`,{
+      method:"GET",
+       headers: {
+          "Content-Type": "application/json",
+        },
+    })
+    const data = await response.json()
+
+    if(data.success){
+      setCategoryReq(data.category)
+      setOpenAddCategoryPopUp(true)
+    }else{
+      toast("Category Not Found",{type:"error"})
+      return
+    }  
+  }
+
+  async function AddCategory() {
     if (categoryReq.name === "" || categoryReq.description === "") {
-        toast("Please fill all inputs", { type: "error" });
-        return;
+      toast("Please fill all inputs", { type: "error" });
+      return;
     }
 
     try {
-        const request = {
-            name: categoryReq.name,
-            description: categoryReq.description,
-        };
-
-        const response = await fetch("/api/category", {
+      const request = {
+        name: categoryReq.name,
+        description: categoryReq.description,
+      };
+      const response = await fetch("/api/category", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
+      });
+      const data = await response.json();
+      if (!response.ok) {
         toast(data.message || "Failed to add category", { type: "error" });
         return;
-        }
-
-        toast("Category Added Successfully", { type: "success" });
-        closeAddCategoryPopup()
+      }
+      toast("Category Added Successfully", { type: "success" });
+      closeAddCategoryPopup()
+      FilterCategories()
 
     } catch (err) {
-        console.error(err);
-        toast("Internal Server Error", { type: "error" });
+      console.error(err);
+      toast("Internal Server Error", { type: "error" });
     }
+  }
+
+  async function FilterCategories(page = 0) {
+    try {
+      setIsLoading(true)
+      let request = filterCategory;
+
+      if (page !== 0) {
+        request['page'] = page
+      }
+
+      const response = await fetch("/api/category/filtercategory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        toast(responseData.message || "Failed to Get categories", { type: "error" });
+        return;
+      }
+      setIsOpenDrawer(false)
+      setCategoriesData(responseData.data)
+      setCategoriesInfo((prev) => ({
+        ...prev,
+        totalPages: responseData?.meta.totalPages,
+        totalCategories: responseData?.meta.total,
+      }))
+      setIsLoading(false)
+
+    } catch (err) {
+      console.error(err);
+      toast("Internal Server Error", { type: "error" });
+    }
+  }
+
+  async function clearFilter() {
+    try {
+      setIsLoading(true)
+      let request = {
+        name: "",
+        description: "",
+        limit: 10,
+        page: 1
+      }
+      setFilterCategory(request)
+      const response = await fetch("/api/category/filtercategory", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        toast(responseData.message || "Failed to Get categories", { type: "error" });
+        return;
+      }
+      setCategoriesData(responseData.data)
+      setCategoriesInfo((prev) => ({
+        ...prev,
+        totalPages: responseData?.meta.totalPages,
+        totalCategories: responseData?.meta.total,
+      }))
+
+      setIsLoading(false)
+
+    } catch (err) {
+      console.error(err);
+      toast("Internal Server Error", { type: "error" });
+    }
+  }
+
+  async function EditCategory() {
+    let request = categoryReq;
+    if(!request.category_id){
+      toast("Category Not Found",{type:"error"})
+      return;
     }
 
+    const response = await fetch(`/api/category/${categoryReq.category_id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
 
+    const data = await response.json()
+    if(data.success){
+      toast("Category Updated Successfully", {type:"success"})
+      closeAddCategoryPopup()
+      clearFilter();
+    }
+    
+  }
+
+  const openDeleteCategory = () =>{
+    if (selectedIds.length === 0) {
+      toast("Please Select At Least 1 Category To delete", {type:"error"})
+    }else{
+      SetOpenDeleteCategoryPopUp(true);
+    }
+  }
+
+  async function DeleteCategory() {
+    let request = {
+      ids: selectedIds
+    }
+    console.log(selectedIds)
+    if(selectedIds.length === 0){
+       toast("Please Select At Least 1 Category To delete", {type:"error"})
+       return
+    }
+    
+    const response = await fetch("/api/category/deletcategories",{
+      method:"POST",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request)
+    })
+
+    const data = await response.json();
+
+    if(data.success){
+      toast(`${data.deletedCount} Categories Have Been Deleted SuccessFully`,{type:"success"})
+      SetOpenDeleteCategoryPopUp(false)
+      clearFilter()
+    }else{
+      toast("Failed To Delete The Selected Categories")
+    }
+
+  }
+
+  
 
   return (
     <div className='flex flex-col gap-4 mt-4'>
       <div className='flex items-center justify-between'>
-       
+
         <span className='text-[20px] font-semibold mb-4'>Categories</span>
         <div className="flex gap-2 items-center">
+           <button
+            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+            onClick={clearFilter}
+          >
+            <FaTimes />
+            Clear Filter
+          </button>
+
           <button
             className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
             onClick={() => setIsOpenDrawer(true)}
@@ -122,13 +293,13 @@ export default function CategoriesComponent({ categories }: { categories: Catego
             Filter
           </button>
 
-          <button
-            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
-            // onClick={clearFilter}
+          <button className='flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600' 
+            onClick={openDeleteCategory}
           >
-            <FaTimes />
-            Clear Filter
+            <FaTrash />
+            Delete Categories
           </button>
+         
           <button onClick={() => setOpenAddCategoryPopUp(true)} className='flex items-center gap-1 text-white px-3 py-2 bg-green-400 hover:bg-green-500 transition duration-300'>
             <FaPlus />
             Add Category
@@ -137,21 +308,24 @@ export default function CategoriesComponent({ categories }: { categories: Catego
 
       </div>
 
-
-      <div className="overflow-x-auto mt-4">
-        <table className="table-auto w-full bg-white">
+      {isLoading ? (
+        <Loader />
+      ) :(
+        <div className='flex flex-col'>
+          <div className="overflow-x-auto my-4">
+          <table className="table-auto w-full bg-white">
             <thead>
               <tr className="bg-black text-white">
                 <th className='px-4 py-2 rounded-tl-2xl'>
-                    <input 
+                  <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
-                     />
+                  />
                 </th>
                 <th className="px-4 py-2">ID</th>
                 <th className="px-4 py-2">Name</th>
-                <th className="px-4 py-2">Descriptiom</th>
+                <th className="px-4 py-2">Description</th>
                 <th className="px-4 py-2 rounded-tr-2xl">Action</th>
               </tr>
             </thead>
@@ -160,11 +334,11 @@ export default function CategoriesComponent({ categories }: { categories: Catego
                 categoriesData.map((category) => (
                   <tr key={category.category_id} className="text-center border">
                     <td>
-                        <input 
-                        type='checkbox' 
+                      <input
+                        type='checkbox'
                         checked={selectedIds.includes(category.category_id)}
                         onChange={() => handleSelectCategory(category.category_id)}
-                        />
+                      />
                     </td>
                     <td className="px-4 py-2">{category.category_id}</td>
                     <td className="px-4 py-2">{category.name}</td>
@@ -172,17 +346,7 @@ export default function CategoriesComponent({ categories }: { categories: Catego
                     <td className="px-4 py-2 flex justify-center items-center gap-1">
                       <FaEdit
                         className="cursor-pointer text-blue-600"
-                        onClick={() => router.push(`/admin/category/${category.category_id}`)}
-                      />
-                      <FaTrash
-                        // onClick={() => {
-                        //   setDeleteInfo({
-                        //     selectedId: category.category_id,
-                        //     showDeletePopUp: true,
-                        //   });
-                        // }}
-                        className="cursor-pointer"
-                        color="red"
+                        onClick={() => openEditPopUp(category.category_id)}
                       />
                     </td>
                   </tr>
@@ -195,12 +359,24 @@ export default function CategoriesComponent({ categories }: { categories: Catego
                 </tr>
               )}
 
-             
+
             </tbody>
-        </table>
+          </table>
 
         </div>
-
+        <div className='flex items-center justify-between'>
+          <ShowingTotal limit={categoriesData.length} total={categoriesInfo.totalCategories} type='Categories' />
+          <Pagination totalPages={categoriesInfo.totalPages} currentPage={filterCategory.page} onChange={(newPage) => {
+            setFilterCategory((prev) => ({
+              ...prev,
+              page: newPage
+            }))
+            FilterCategories(newPage)
+          }} />
+        </div>
+        </div>
+      )}
+      
       {deleteInfo.showDeletePopUp && (
         <PopUp
           isOpen={deleteInfo.showDeletePopUp}
@@ -225,100 +401,130 @@ export default function CategoriesComponent({ categories }: { categories: Catego
               >
                 Cancel
               </button>
-             {isDeleteLoading ? (
-              <Loader />
-             ) : (
-               <button
-                // onClick={() => deleteUser(deleteInfo.selectedId)}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition"
-              >
-                Deletee
-              </button>
-             )}
+              {isDeleteLoading ? (
+                <Loader />
+              ) : (
+                <button
+                  // onClick={() => deleteUser(deleteInfo.selectedId)}
+                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+                >
+                  Deletee
+                </button>
+              )}
             </div>
           </div>
         </PopUp>
       )}
 
 
-        <Drawer  isOpen={isOpenDrawer} onClose={() => setIsOpenDrawer(false)} >
-          <div className='flex flex-col gap-3'>
-            <LabledInput label='Search By Email' InputType='text' placeholder='filter by email' value={filtersData.email} 
+      <Drawer isOpen={isOpenDrawer} onClose={() => setIsOpenDrawer(false)} >
+        <div className='flex flex-col gap-3'>
+          <LabledInput label='Search By Name' InputType='text' placeholder='filter by Name' value={filterCategory.name}
             onChange={e =>
-              setFilterData(prev => ({
+              setFilterCategory(prev => ({
                 ...prev,
-                email: e.target.value
+                name: e.target.value
               }))
             }
 
-            />
-            <LabledInput label='Search By Phone Numver' InputType='number' placeholder='filter by phone number' value={filtersData.phoneNumber.toString()}
+          />
+          <LabledInput label='Search By Description' InputType='text' placeholder='filter by Description' value={filterCategory.description}
             onChange={e =>
-              setFilterData(prev => ({
+              setFilterCategory(prev => ({
                 ...prev,
-                phoneNumber: e.target.value
+                description: e.target.value
               }))
-              
+
             }
-            />
-            
-            <div className='flex items-center justify-end'>
-              <button className='float-right bg-blue-500 text-white px-2 py-1 rounded-md shadow-md flex gap-1 items-center'
-            //   onClick={getUsers}
-              >
-                <FaFilter />
-                Filter Users
-              </button>
-            </div>
+          />
+
+          <div className='flex items-center justify-end'>
+            <button className='float-right bg-blue-500 text-white px-2 py-1 rounded-md shadow-md flex gap-1 items-center'
+              onClick={() => {
+                FilterCategories()
+              }}
+            >
+              <FaFilter />
+              Filter Categories
+            </button>
           </div>
-           
+        </div>
 
-          
-        </Drawer>
 
-        <PopUp
+
+      </Drawer>
+
+      <PopUp
         isOpen={openAddCategoryPopUp}
         onClose={closeAddCategoryPopup}
         title='Add New Category'
 
-        >
-            <input 
-            type='text'
-            placeholder='Category Name'
-            value={categoryReq.name}
-            onChange={(e) =>
-                setCategoryReq((prev) => ({ ...prev, name: e.target.value }))
-            }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+      >
+        <input
+          type='text'
+          placeholder='Category Name'
+          value={categoryReq.name}
+          onChange={(e) =>
+            setCategoryReq((prev) => ({ ...prev, name: e.target.value }))
+          }
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-            <input 
-            type='text'
-            placeholder='Category Description'
-            value={categoryReq.description}
-            onChange={(e) =>
-                setCategoryReq((prev) => ({ ...prev, description: e.target.value }))
-            }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <input
+          type='text'
+          placeholder='Category Description'
+          value={categoryReq.description}
+          onChange={(e) =>
+            setCategoryReq((prev) => ({ ...prev, description: e.target.value }))
+          }
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-            <div className="flex justify-end gap-2 pt-2">
-                <button
-                    className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
-                    onClick={closeAddCategoryPopup}
-                >
-                    Cancel
-                </button>
-                <button
-                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                    onClick={AddCategory}
-                >
-                    Create
-                </button>
-            </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
+            onClick={closeAddCategoryPopup}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            onClick={categoryReq.category_id? EditCategory : AddCategory}
+          >
+           {
+            categoryReq.category_id ? "Update": "Create"
+           }
+          </button>
+        </div>
 
 
-        </PopUp>
+      </PopUp>
+
+      <PopUp
+        isOpen={openDeleteCategoryPopUp}
+        onClose={() => SetOpenDeleteCategoryPopUp(false)}
+        title='Delete Categories'
+      >
+        <p className="text-gray-700 text-base">
+          Are you sure you want to delete these categories?
+        </p>
+
+        <div className="flex justify-end gap-3 pt-6">
+          <button
+            className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+            onClick={()=> SetOpenDeleteCategoryPopUp(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm"
+            onClick={DeleteCategory}
+          >
+            Delete
+          </button>
+        </div>
+
+      </PopUp>
 
     </div>
   );

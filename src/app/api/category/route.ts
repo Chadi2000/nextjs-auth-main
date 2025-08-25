@@ -8,9 +8,14 @@ const categorySchema = z
     description: z.string().min(1, 'Description is required').max(100)
   })
 
+const paginationSchema = z.object({
+    page:z.number(),
+    limt: z.number()
+})
+
 export async function POST(req: Request) {
   try {
-    console.log("I Am Here")
+
     const json = await req.json();
     const parsed = categorySchema.safeParse(json);
 

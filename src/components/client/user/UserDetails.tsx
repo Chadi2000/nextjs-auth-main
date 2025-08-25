@@ -1,11 +1,10 @@
 'use client';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Input from '../../components/utils/Input'
-import LabledInput from '../utils/LabeledInput';
+import LabledInput from '@/components/utils/LabeledInput';
 import Image from 'next/image';
-import BlankProfile from "../../../public/blankProfile.png"
-import CardBox from '../utils/CardBox';;
+import BlankProfile from "../../../../public/blankProfile.png"
+import CardBox from '@/components/utils/CardBox';
 import { HiArrowNarrowLeft } from 'react-icons/hi'
 
 interface User {

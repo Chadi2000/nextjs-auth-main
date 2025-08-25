@@ -47,8 +47,6 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 10);
 
-    console.log(phoneNumber)
-
 
 
     const newUser = await db.user.create({
