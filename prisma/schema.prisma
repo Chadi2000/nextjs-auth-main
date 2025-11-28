@@ -109,7 +109,6 @@ enum OrderStatus {
 model Season {
   season_id Int     @id @default(autoincrement())
   name      Seasons
-  products  Product[]
 }
 
 model Category {

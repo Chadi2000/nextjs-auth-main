@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import CategoriesComponent from '@/components/client/category/Categories'
 
 async function page() {
-  const pageNumber = 1;
+    const pageNumber = 1;
     const limitNumber = 10;
     const skip = (pageNumber - 1) * limitNumber;
 

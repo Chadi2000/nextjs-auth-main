@@ -313,109 +313,69 @@ export default function CategoriesComponent(CategoriesInfoOrgin: CategoriesInfo)
       ) :(
         <div className='flex flex-col'>
           <div className="overflow-x-auto my-4">
-          <table className="table-auto w-full bg-white">
-            <thead>
-              <tr className="bg-black text-white">
-                <th className='px-4 py-2 rounded-tl-2xl'>
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                  />
-                </th>
-                <th className="px-4 py-2">ID</th>
-                <th className="px-4 py-2">Name</th>
-                <th className="px-4 py-2">Description</th>
-                <th className="px-4 py-2 rounded-tr-2xl">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoriesData.length > 0 ? (
-                categoriesData.map((category) => (
-                  <tr key={category.category_id} className="text-center border">
-                    <td>
-                      <input
-                        type='checkbox'
-                        checked={selectedIds.includes(category.category_id)}
-                        onChange={() => handleSelectCategory(category.category_id)}
-                      />
-                    </td>
-                    <td className="px-4 py-2">{category.category_id}</td>
-                    <td className="px-4 py-2">{category.name}</td>
-                    <td className="px-4 py-2">{category.description}</td>
-                    <td className="px-4 py-2 flex justify-center items-center gap-1">
-                      <FaEdit
-                        className="cursor-pointer text-blue-600"
-                        onClick={() => openEditPopUp(category.category_id)}
-                      />
+            <table className="table-auto w-full bg-white">
+              <thead>
+                <tr className="bg-black text-white">
+                  <th className='px-4 py-2 rounded-tl-2xl'>
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="px-4 py-2">ID</th>
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">Description</th>
+                  <th className="px-4 py-2 rounded-tr-2xl">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoriesData.length > 0 ? (
+                  categoriesData.map((category) => (
+                    <tr key={category.category_id} className="text-center border">
+                      <td>
+                        <input
+                          type='checkbox'
+                          checked={selectedIds.includes(category.category_id)}
+                          onChange={() => handleSelectCategory(category.category_id)}
+                        />
+                      </td>
+                      <td className="px-4 py-2">{category.category_id}</td>
+                      <td className="px-4 py-2">{category.name}</td>
+                      <td className="px-4 py-2">{category.description}</td>
+                      <td className="px-4 py-2 flex justify-center items-center gap-1">
+                        <FaEdit
+                          className="cursor-pointer text-blue-600"
+                          onClick={() => openEditPopUp(category.category_id)}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4">
+                      No Categories Found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="text-center py-4">
-                    No Categories Found
-                  </td>
-                </tr>
-              )}
+                )}
 
 
-            </tbody>
-          </table>
+              </tbody>
+            </table>
 
-        </div>
-        <div className='flex items-center justify-between'>
-          <ShowingTotal limit={categoriesData.length} total={categoriesInfo.totalCategories} type='Categories' />
-          <Pagination totalPages={categoriesInfo.totalPages} currentPage={filterCategory.page} onChange={(newPage) => {
-            setFilterCategory((prev) => ({
-              ...prev,
-              page: newPage
-            }))
-            FilterCategories(newPage)
-          }} />
-        </div>
-        </div>
-      )}
-      
-      {deleteInfo.showDeletePopUp && (
-        <PopUp
-          isOpen={deleteInfo.showDeletePopUp}
-          title="Delete Category"
-          onClose={cancelDelete}
-        >
-          <div className="flex flex-col gap-4">
-            {/* Message */}
-            <p className="text-sm text-gray-700 text-center">
-              Are you sure you want to delete this categpry{' '}
-              <span className="text-red-600 font-semibold">
-                {/* {deleteInfo.selectedName} */}
-              </span>
-              ?
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={cancelDelete}
-                className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition"
-              >
-                Cancel
-              </button>
-              {isDeleteLoading ? (
-                <Loader />
-              ) : (
-                <button
-                  // onClick={() => deleteUser(deleteInfo.selectedId)}
-                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition"
-                >
-                  Deletee
-                </button>
-              )}
-            </div>
           </div>
-        </PopUp>
+          <div className='flex items-center justify-between'>
+            <ShowingTotal limit={categoriesData.length} total={categoriesInfo.totalCategories} type='Categories' />
+            <Pagination totalPages={categoriesInfo.totalPages} currentPage={filterCategory.page} onChange={(newPage) => {
+              setFilterCategory((prev) => ({
+                ...prev,
+                page: newPage
+              }))
+              FilterCategories(newPage)
+            }} />
+          </div>
+        </div>
       )}
-
 
       <Drawer isOpen={isOpenDrawer} onClose={() => setIsOpenDrawer(false)} >
         <div className='flex flex-col gap-3'>
